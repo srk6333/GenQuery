@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # MySQL database for testing
+  mysql:
+    image: mysql:8.0
+    container_name: sql-assistant-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sql_assistant_demo
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: demo_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docs/sample-data.sql:/docker-entrypoint-initdb.d/sample-data.sql
+    networks:
+      - sql-assistant
+
+  # PostgreSQL database for testing
+  postgres:
+    image: postgres:15
+    container_name: sql-assistant-postgres
+    environment:
+      POSTGRES_DB: sql_assistant_demo
+      POSTGRES_USER: demo_user
+      POSTGRES_PASSWORD: demo_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sql-assistant
+
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: sql-assistant-backend
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MYSQL_HOST=mysql
+      - POSTGRES_HOST=postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - postgres
+    networks:
+      - sql-assistant
+
+  # Frontend application
+  frontend:
+    build: ./frontend
+    container_name: sql-assistant-frontend
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - sql-assistant
+
+volumes:
+  mysql_data:
+  postgres_data:
+
+networks:
+  sql-assistant:
+    driver: bridge
