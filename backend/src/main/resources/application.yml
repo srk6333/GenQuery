@@ -32,7 +32,7 @@ spring:
 # OpenAI Configuration
 openai:
   api:
-    key: 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
+    key: api-key
     base-url: https://api.openai.com/v1
     model: gpt-4
 
